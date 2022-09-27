@@ -1,0 +1,5 @@
+{
+  "name": "HASS.Agent",
+  "domains": ["notify, media_player"],
+  "render_readme": true
+}
