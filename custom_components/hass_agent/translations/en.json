@@ -1,0 +1,40 @@
+{
+    "config": {
+        "flow_title": "{name}",
+        "abort": {
+            "no_devices_found": "No devices found on the network"
+        },
+        "error": {
+            "cannot_connect": "Failed to connect"
+        },
+        "step": {
+            "confirm": {
+                "description": "Do you want to start set up?"
+            },
+            "local_api": {
+                "description": "",
+                "data": {
+                    "host": "Host",
+                    "port": "Port",
+                    "ssl": "Use SSL"
+                }
+            }
+        }
+    },
+    "options": {
+        "step": {
+            "init": {
+                "data": {
+                    "default_notification_title": "Default Notification Title. Space to disable."
+                },
+                "title": "Configure HASS.Agent"
+            }
+        }
+    },
+    "device_automation": {
+        "trigger_type": {
+          "notifications_mqtt": "When a notification with a specfic action has been pressed (MQTT)",
+          "notifications_event": "When a notification with a specfic action has been pressed (Event)"
+        }
+    }
+}
