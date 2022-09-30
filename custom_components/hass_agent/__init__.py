@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import logging
 import requests
+from .views import MediaPlayerThumbnailView
 from homeassistant.helpers import device_registry as dr
 from homeassistant.components.mqtt.models import ReceiveMessage
 from homeassistant.components.mqtt.subscription import (
@@ -104,7 +105,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         {
             "internal_mqtt": {},
             "apis": {},
-            "mqtt": {},
+            "thumbnail": None,
             "loaded": {"media_player": False, "notifications": False},
         },
     )
@@ -114,6 +115,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     url = entry.data.get(CONF_URL, None)
 
     if url is not None:
+
         def get_device_info():
             return requests.get(f"{url}/info", timeout=10)
 
@@ -201,3 +203,8 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     hass.data[DOMAIN].pop(entry.entry_id)
 
     return unload_ok
+
+
+async def async_setup(hass: HomeAssistant, config) -> bool:
+    hass.http.register_view(MediaPlayerThumbnailView(hass))
+    return True

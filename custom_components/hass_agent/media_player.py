@@ -2,7 +2,9 @@ from __future__ import annotations
 import json
 
 import logging
+import time
 from typing import Any
+from homeassistant import util
 
 from homeassistant.components.mqtt.models import ReceiveMessage
 from homeassistant.helpers import device_registry as dr
@@ -13,17 +15,20 @@ from .const import DOMAIN
 from homeassistant.components.mqtt.subscription import (
     async_prepare_subscribe_topics,
     async_subscribe_topics,
+    async_unsubscribe_topics,
 )
 from homeassistant.config_entries import ConfigEntry
 
 from homeassistant.components.media_player import (
+    MediaPlayerDeviceClass,
     MediaPlayerEntity,
     MediaPlayerEntityFeature,
 )
 
-from homeassistant.components.media_player.const import MEDIA_TYPE_MUSIC, MediaType
+from homeassistant.components.media_player.const import MEDIA_TYPE_MUSIC
 
 from homeassistant.components.media_player.browse_media import (
+    BrowseMedia,
     async_process_play_media_url,
 )
 
@@ -49,71 +54,97 @@ SUPPORT_HAMP = (
     | MediaPlayerEntityFeature.VOLUME_STEP
     | MediaPlayerEntityFeature.PLAY
     | MediaPlayerEntityFeature.PLAY_MEDIA
+    | MediaPlayerEntityFeature.SEEK
+    | MediaPlayerEntityFeature.BROWSE_MEDIA
 )
 
 
 async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
 ) -> bool:
-
-    sub_state = hass.data[DOMAIN][entry.entry_id]["mqtt"]
-
     device_registry = dr.async_get(hass)
     device = device_registry.async_get_device(identifiers={(DOMAIN, entry.unique_id)})
 
     if device is None:
         return False
 
-    entity = HassAgentMediaPlayerDevice(
-        entry.unique_id,
-        device,
-        f"hass.agent/media_player/{device.name}/cmd",
+    async_add_entities(
+        [HassAgentMediaPlayerDevice(entry.unique_id, entry.entry_id, device)]
     )
-
-    def updated(message: ReceiveMessage):
-        payload = json.loads(message.payload)
-        entity.apply_payload(payload)
-
-    sub_state = async_prepare_subscribe_topics(
-        hass,
-        sub_state,
-        {
-            f"{entry.unique_id}-state": {
-                "topic": f"hass.agent/media_player/{device.name}/state",
-                "msg_callback": updated,
-                "qos": 0,
-            }
-        },
-    )
-
-    await async_subscribe_topics(hass, sub_state)
-
-    hass.data[DOMAIN][entry.entry_id]["mqtt"] = sub_state
-
-    async_add_entities([entity])
 
     return True
-
-
-async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
-    print("unload!")
 
 
 class HassAgentMediaPlayerDevice(MediaPlayerEntity):
     """HASS.Agent MediaPlayer Device"""
 
     @callback
-    def apply_payload(self, payload):
+    def update_thumbnail(self, message: ReceiveMessage):
+        self.hass.data[DOMAIN][self._entry_id]["thumbnail"] = message.payload
+
+        self._attr_media_image_url = (
+            f"/api/hass_agent/{self.entity_id}/thumbnail.png?time={time.time()}"
+        )
+
+    @property
+    def media_image_local(self) -> str | None:
+        return self._attr_media_image_url
+
+    @callback
+    def updated(self, message: ReceiveMessage):
+        """Updates the media player with new data from MQTT"""
+        payload = json.loads(message.payload)
+
         self._state = payload["state"].lower()
-        self._playing = payload["title"]
         self._volume_level = payload["volume"]
         self._muted = payload["muted"]
         self._available = True
 
+        if self._state != "off":
+            self._attr_media_album_artist = payload["albumartist"]
+            self._attr_media_album_name = payload["albumtitle"]
+            self._attr_media_artist = payload["artist"]
+            self._attr_media_title = payload["title"]
+
+            self._attr_media_duration = payload["duration"]
+            self._attr_media_position = payload["currentposition"]
+
+            self._attr_media_position_updated_at = util.dt.utcnow()
+
+        self._last_updated = time.time()
+
+        # self.media_image_url
+
         self.async_write_ha_state()
 
-    def __init__(self, unique_id, device: dr.DeviceEntry, command_topic):
+    async def async_added_to_hass(self) -> None:
+        self._listeners = async_prepare_subscribe_topics(
+            self.hass,
+            self._listeners,
+            {
+                f"{self._attr_unique_id}-state": {
+                    "topic": f"hass.agent/media_player/{self._attr_device_info['name']}/state",
+                    "msg_callback": self.updated,
+                    "qos": 0,
+                },
+                f"{self._attr_unique_id}-thumbnail": {
+                    "topic": f"hass.agent/media_player/{self._attr_device_info['name']}/thumbnail",
+                    "msg_callback": self.update_thumbnail,
+                    "qos": 0,
+                    "encoding": None,
+                },
+            },
+        )
+
+        await async_subscribe_topics(self.hass, self._listeners)
+
+    async def async_will_remove_from_hass(self) -> None:
+        if self._listeners is not None:
+            async_unsubscribe_topics(self.hass, self._listeners)
+
+    def __init__(self, unique_id, entry_id, device: dr.DeviceEntry):
         """Initialize"""
+        self._entry_id = entry_id
         self._name = device.name
         self._attr_device_info = {
             "identifiers": device.identifiers,
@@ -122,13 +153,16 @@ class HassAgentMediaPlayerDevice(MediaPlayerEntity):
             "model": device.model,
             "sw_version": device.sw_version,
         }
-        self._command_topic = command_topic
-        self._attr_unique_id = f"hass.agent-{unique_id}"
+        self._command_topic = f"hass.agent/media_player/{device.name}/cmd"
+        self._attr_unique_id = f"media_player_{unique_id}"
         self._available = False
         self._muted = False
         self._volume_level = 0
         self._playing = ""
         self._state = ""
+
+        self._listeners = {}
+        self._last_updated = 0
 
     async def _send_command(self, command, data=None):
         """Send a command"""
@@ -160,12 +194,14 @@ class HassAgentMediaPlayerDevice(MediaPlayerEntity):
     @property
     def available(self):
         """Return if we're available"""
-        return self._available
 
-    @property
-    def media_title(self):
-        """Return the title of current playing media"""
-        return self._playing
+        diff = round(time.time() - self._last_updated)
+        return diff < 5
+
+    # @property
+    # def media_title(self):
+    #     """Return the title of current playing media"""
+    #     return self._playing
 
     @property
     def volume_level(self):
@@ -178,12 +214,6 @@ class HassAgentMediaPlayerDevice(MediaPlayerEntity):
         return self._muted
 
     @property
-    def media_duration(self):
-        """Return the duration of the current playing media in seconds"""
-        """ NOT IMPLEMENTED """
-        return 0
-
-    @property
     def supported_features(self):
         """Flag media player features that are supported"""
         return SUPPORT_HAMP
@@ -191,21 +221,24 @@ class HassAgentMediaPlayerDevice(MediaPlayerEntity):
     @property
     def device_class(self):
         """Announce ourselve as a speaker"""
-        return "DEVICE_CLASS_SPEAKER"
+        return MediaPlayerDeviceClass.SPEAKER
 
     @property
     def media_content_type(self):
         """Content type of current playing media"""
         return MEDIA_TYPE_MUSIC
 
+    async def async_media_seek(self, position: float) -> None:
+        self._attr_media_position = position
+        self._attr_media_position_updated_at = util.dt.utcnow()
+        await self._send_command("seek", position)
+
     async def async_volume_up(self):
         """Volume up the media player"""
-        super().async_volume_up()
         await self._send_command("volumeup")
 
     async def async_volume_down(self):
         """Volume down media player"""
-        super().async_volume_down()
         await self._send_command("volumedown")
 
     async def async_mute_volume(self, mute):
@@ -235,11 +268,22 @@ class HassAgentMediaPlayerDevice(MediaPlayerEntity):
         """Send previous track command"""
         await self._send_command("previous")
 
-    async def async_play_media(
-        self, media_type: MediaType | str, media_id: str, **kwargs: Any
-    ):
+    async def async_browse_media(
+        self, media_content_type: str | None = None, media_content_id: str | None = None
+    ) -> BrowseMedia:
+        """Implement the websocket media browsing helper."""
+        # If your media player has no own media sources to browse, route all browse commands
+        # to the media source integration.
+        return await media_source.async_browse_media(
+            self.hass,
+            media_content_id,
+            # This allows filtering content. In this case it will only show audio sources.
+            content_filter=lambda item: item.media_content_type.startswith("audio/"),
+        )
+
+    async def async_play_media(self, media_type: str, media_id: str, **kwargs: Any):
         """Play media source"""
-        if media_type != MEDIA_TYPE_MUSIC:
+        if not media_type.startswith("audio/"):
             _logger.error(
                 "Invalid media type %r. Only %s is supported!",
                 media_type,

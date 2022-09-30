@@ -95,7 +95,9 @@ class HassAgentNotificationService(BaseNotificationService):
 
         _logger.debug("Sending notification")
 
-        if entry.data[CONF_URL] is None:
+        url = entry.data.get(CONF_URL, None)
+
+        if url is None:
             await mqtt.async_publish(
                 self.hass,
                 f"hass.agent/notifications/{self._device_name}",
