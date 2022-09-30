@@ -12,7 +12,8 @@
                 "description": "Do you want to start set up?"
             },
             "local_api": {
-                "description": "",
+                "title": "HASS.Agent",
+                "description": "This adds the device to HA using the local api. Currently ONLY notifications will work. Add the device using the auto discovery if you want media_player.",
                 "data": {
                     "host": "Host",
                     "port": "Port",

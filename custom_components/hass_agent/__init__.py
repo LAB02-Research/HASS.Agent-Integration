@@ -110,8 +110,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         },
     )
 
-    print(entry.options)
-
     url = entry.data.get(CONF_URL, None)
 
     if url is not None:

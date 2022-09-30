@@ -24,7 +24,6 @@ class MediaPlayerThumbnailView(HomeAssistantView):
         request: web.Request,
         **kwargs: Any,
     ) -> web.Response:
-        print(kwargs)
 
         media_player = kwargs["media_player"]
 
