@@ -1,5 +1,5 @@
 {
   "name": "HASS.Agent",
-  "domains": ["notify, media_player"],
+  "homeassistant": "2022.9",
   "render_readme": true
 }
