@@ -11,7 +11,7 @@
 
 ⚠️❗**IMPORTANT ** ❗⚠️ 
 
-**You need at least HASS.Agent [2022.13.0-beta4](https://github.com/LAB02-Research/HASS.Agent/releases/tag/2022.13.0-beta4) for this integration to work!**
+**You need at least HASS.Agent [2022.13.0](https://github.com/LAB02-Research/HASS.Agent/releases/tag/2022.13.0) for this integration to work!**
 
 ----
 
