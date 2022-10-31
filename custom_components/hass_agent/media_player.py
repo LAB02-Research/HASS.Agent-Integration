@@ -283,7 +283,7 @@ class HassAgentMediaPlayerDevice(MediaPlayerEntity):
 
     async def async_play_media(self, media_type: str, media_id: str, **kwargs: Any):
         """Play media source"""
-        if not media_type.startswith("music") and not media_type.startswith("audio/"):
+        if not media_type.startswith("music") and not media_type.startswith("audio/") and not media_type.startswith("provider"):
             _logger.error(
                 "Invalid media type %r. Only %s is supported!",
                 media_type,
