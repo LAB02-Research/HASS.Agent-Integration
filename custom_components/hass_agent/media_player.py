@@ -56,6 +56,7 @@ SUPPORT_HAMP = (
     | MediaPlayerEntityFeature.PLAY_MEDIA
     | MediaPlayerEntityFeature.SEEK
     | MediaPlayerEntityFeature.BROWSE_MEDIA
+    | MediaPlayerEntityFeature.VOLUME_SET
 )
 
 
@@ -207,6 +208,11 @@ class HassAgentMediaPlayerDevice(MediaPlayerEntity):
     def volume_level(self):
         """Return the volume level of the media player (0..1)"""
         return self._volume_level / 100.0
+        
+    async def async_set_volume_level(self, volume: float) -> None:
+        """Send new volume_level to device."""
+        volume = round(volume * 100)
+        await self._send_command("setvolume", volume)
 
     @property
     def is_volume_muted(self):
