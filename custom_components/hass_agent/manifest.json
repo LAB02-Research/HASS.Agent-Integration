@@ -1,7 +1,7 @@
 {
   "domain": "hass_agent",
   "name": "HASS.Agent",
-  "version": "2022.10.31",
+  "version": "2022.11.9",
   "config_flow": true,
   "documentation": "https://github.com/LAB02-Research/HASS.Agent-Integration",
   "issue_tracker": "https://github.com/LAB02-Research/HASS.Agent-Integration/issues",
