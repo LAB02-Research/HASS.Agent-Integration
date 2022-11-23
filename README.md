@@ -31,12 +31,16 @@ You can use [actionable notifications](https://hassagent.readthedocs.io/en/lates
 
 ![image](https://user-images.githubusercontent.com/81011038/190643738-724dac45-4d03-4a19-a0e6-3a59b5de0aad.png)
 
-Need help? Check [the documentation](https://hassagent.readthedocs.io/), visit the <a href="https://community.home-assistant.io/t/hass-agent-a-new-windows-based-client-to-receive-notifications-perform-quick-actions-and-much-more/369094" target="_blank">dedicated HA forum thread</a> or <a href="https://discord.gg/nMvqzwrVBU" target="_blank">join on Discord</a>.
+----
 
-Note: it won't be of much use if you don't have HASS.Agent installed & configured on at least one PC (or Windows based device).
+[INSTALLATION MANUAL](https://hassagent.readthedocs.io/en/latest/integration/installation/)
 
-\* you can still add your device manually (through the UI) if you want to use the local API instead.
+[CONFIGURATION MANUAL](https://hassagent.readthedocs.io/en/latest/integration/configuration/)
+
+For more help and examples, check [the documentation](https://hassagent.readthedocs.io/), visit the <a href="https://community.home-assistant.io/t/hass-agent-a-new-windows-based-client-to-receive-notifications-perform-quick-actions-and-much-more/369094" target="_blank">dedicated HA forum thread</a> or <a href="https://discord.gg/nMvqzwrVBU" target="_blank">join on Discord</a>.
 
 ----
 
 Thanks [@fillefilip8](https://github.com/fillefilip8) for developing!
+
+\* you can still add your device manually (through the UI) if you want to use the local API instead.
