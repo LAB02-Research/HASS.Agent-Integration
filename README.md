@@ -17,7 +17,7 @@
 
 # HASS.Agent Integration
 
-This <a href="https://www.home-assistant.io" target="_blank">Home Assistant</a> integration combines the two pervious integrations, and allows you to send notifications to <a href="https://github.com/LAB02-Research/HASS.Agent" target="_blank">HASS.Agent</a>, a Windows-based Home Assistant client. It also enables you to use it as a mediaplayer device: see and control what's playing and send text-to-speech. 
+This <a href="https://www.home-assistant.io" target="_blank">Home Assistant</a> integration combines the two previous integrations, and allows you to send notifications to <a href="https://github.com/LAB02-Research/HASS.Agent" target="_blank">HASS.Agent</a>, a Windows-based Home Assistant client. It also enables you to use it as a mediaplayer device: see and control what's playing and send text-to-speech. 
 
 All communication is now done through MQTT\*. It supports auto discovery, so you'll see your HASS.Agent devices show up automatically in the integrations page:
 
